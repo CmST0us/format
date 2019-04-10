@@ -75,7 +75,9 @@ namespace format
             return this->_data.str().size();
         }
 
-        int m_bytes_available{ 0 };
+        int get_bytes_available() {
+            return this->get_length() - this->m_position;
+        }
 
         byte_array& write_byte(uint8_t v) {
             this->_data << v;
@@ -84,50 +86,119 @@ namespace format
         }
 
         byte_array& write(uint8_t v) {
-            return this -> write_byte(v);
+            return this->write_byte(v);
         }
 
         byte_array& write(uint16_t v) {
-            uint16_byte b;
-            b.v = BYTESWAP_16(v);
-            for (int i = 0; i < format::UINT16_SIZE; ++i) {
+            return this->write<uint16_t, format::UINT16_SIZE>(v);
+        }
+
+        byte_array& write(uint32_t v) {
+            return this->write<uint32_t, format::UINT32_SIZE>(v);
+        }
+
+        byte_array& write(int8_t v) {
+            return this->write_byte((uint8_t)v);
+        }
+
+        byte_array& write(int16_t v) {
+            return this->write<int16_t, format::INT16_SIZE>(v);
+        }
+
+        byte_array& write(int32_t v) {
+            return this->write<int32_t, format::INT32_SIZE>(v);
+        }
+
+        template<class T, int size>
+        byte_array& write(T v) {
+            number_byte<T, size> b;
+            b.v = v;
+
+            if (size == 4) {
+                b.v = BYTESWAP_32(b.v);
+            } else if (size == 2) {
+                b.v = BYTESWAP_16(b.v);
+            }
+
+            for (int i = 0; i < size; ++i) {
                 this->write_byte(b.b[i]);
             }
             return *this;
         }
 
-        byte_array& write(uint32_t v);
-        byte_array& write(int8_t v);
-        byte_array& write(int16_t v);
-        byte_array& write(int32_t v);
         // [TODO]: write int24 uint24
         // create new class int24, class uint24
-        byte_array& write(uint8_t *data, int length);
+        byte_array& write(uint8_t *data, int length) {
+            for (int i = 0; i < length; i++) {
+                this->write_byte(data[i]);
+            }
+            return *this;
+        }
 
         uint8_t read_byte() {
             uint8_t v = 0;
             this->_data >> v;
-            this->m_position -= format::UINT8_SIZE;
+            this->m_position += format::UINT8_SIZE;
             return v;
         }
+
         uint8_t read_uint8() {
+            if (this->get_bytes_available() < format::UINT8_SIZE) {
+                throw format::error::eof;
+            }
             return this->read_byte();
         }
 
         uint16_t read_uint16() {
-            uint16_byte b;
-            for (int i = 0; i < format::UINT16_SIZE; ++i) {
-                b.b[i] = this->read_byte();
-            }
-            b.v = BYTESWAP_16(b.v);
-            return b.v;
+            return read<uint16_t, format::UINT16_SIZE>();
         }
 
-        uint32_t read_uint32();
-        int8_t read_int8();
-        int16_t read_int16();
-        int32_t read_int32();
-        int read_data(uint8_t *buf, int length);
+        uint32_t read_uint32() {
+            return read<uint32_t, format::UINT32_SIZE>();
+        }
+
+        int8_t read_int8() {
+            if (this->get_bytes_available() < format::INT8_SIZE) {
+                throw format::error::eof;
+            }
+            return (int8_t)this->read_byte();
+        }
+
+        int16_t read_int16() {
+            return read<int16_t, format::INT16_SIZE>();
+        }
+
+        int32_t read_int32() {
+            return read<int32_t, format::INT32_SIZE>();
+        }
+
+        template<class T, int size>
+        T read() {
+            number_byte<T, size> b;
+            
+            if (this->get_bytes_available() < size) {
+                throw format::error::eof;
+            }
+
+            for (int i = 0; i < size; ++i) {
+                b.b[i] = this->read_byte();
+            }
+
+            if (size == 4) {
+                b.v = BYTESWAP_32(b.v);
+            } else if (size == 2) {
+                b.v = BYTESWAP_16(b.v);
+            }
+
+            return (T)b.v;
+        }
+
+        
+        /*
+        format::data& read_data(int len) {
+            
+        }
+        */
 
     private:
         std::stringstream _data{std::stringstream(std::ios::in | std::ios::out | std::ios::binary)};
@@ -138,7 +209,7 @@ namespace format
     }
 
     byte_array::byte_array(format::data& data) {
-
+        //this->_data << data;
     }
 
     byte_array::~byte_array() {
