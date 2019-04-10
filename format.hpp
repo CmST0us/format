@@ -1,11 +1,10 @@
 #pragma once
 
 #include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <windows.h>
-
 #undef _BIG_ENDIAN
 // Set Current System Endian
 // define _BIG_ENDIAN if in big-endian system
@@ -111,6 +110,10 @@ namespace format
 
         template<class T, int size>
         byte_array& write(T v) {
+            if (sizeof(T) != size) {
+                throw format::error::parse;
+            }
+
             number_byte<T, size> b;
             b.v = v;
 
@@ -133,6 +136,12 @@ namespace format
                 this->write_byte(data[i]);
             }
             return *this;
+        }
+
+        byte_array& write(format::data &data) {
+            for (auto i = data.begin(); i != data.end(); i++) {
+                this->write_byte((uint8_t)*i);
+            }
         }
 
         uint8_t read_byte() {
@@ -174,6 +183,10 @@ namespace format
 
         template<class T, int size>
         T read() {
+            if (sizeof(T) != size) {
+                throw format::error::parse;
+            }
+
             number_byte<T, size> b;
             
             if (this->get_bytes_available() < size) {
@@ -193,12 +206,17 @@ namespace format
             return (T)b.v;
         }
 
-        
-        /*
-        format::data& read_data(int len) {
-            
+        format::data read_data(int len) {
+            if (this->get_bytes_available() < len) {
+                throw format::error::eof;
+            }
+            char *buf = new char[len];
+            ::memset(buf, 0, len);
+            this->_data.read(buf, len);
+            format::data d(buf, len);
+            delete [] buf;
+            return d;
         }
-        */
 
     private:
         std::stringstream _data{std::stringstream(std::ios::in | std::ios::out | std::ios::binary)};
@@ -209,7 +227,7 @@ namespace format
     }
 
     byte_array::byte_array(format::data& data) {
-        //this->_data << data;
+        this->_data << data;
     }
 
     byte_array::~byte_array() {
