@@ -64,18 +64,30 @@ namespace format
 
     class byte_array {
     public:
-        byte_array();
-        byte_array(format::data& data);
-        ~byte_array();
+        byte_array() {
+
+        }
+
+        byte_array(format::data& data) {
+            this->_data << data;
+        }
+
+        ~byte_array() {
+
+        }
 
         int m_position{ 0 };
 
         int get_length() {
-            return this->_data.str().size();
+            return static_cast<int>(this->_data.str().size());
         }
 
         int get_bytes_available() {
             return this->get_length() - this->m_position;
+        }
+
+        const format::data get_data() {
+            return this->_data.str();
         }
 
         byte_array& write_byte(uint8_t v) {
@@ -221,16 +233,4 @@ namespace format
     private:
         std::stringstream _data{std::stringstream(std::ios::in | std::ios::out | std::ios::binary)};
     };
-
-    byte_array::byte_array() {
-
-    }
-
-    byte_array::byte_array(format::data& data) {
-        this->_data << data;
-    }
-
-    byte_array::~byte_array() {
-
-    }
 }
