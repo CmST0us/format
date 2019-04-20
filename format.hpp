@@ -154,6 +154,7 @@ namespace format
             for (auto i = data.begin(); i != data.end(); i++) {
                 this->write_byte((uint8_t)*i);
             }
+            return *this;
         }
 
         uint8_t read_byte() {
