@@ -68,7 +68,7 @@ namespace format
 
         }
 
-        byte_array(format::data& data) {
+        byte_array(const format::data& data) {
             this->_data << data;
         }
 
