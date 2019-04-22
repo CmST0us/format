@@ -69,7 +69,7 @@ namespace format
         }
 
         byte_array(const format::data& data) {
-            this->_data << data;
+            this->_data.write(data.c_str(), static_cast<std::streamsize>(data.size()));
         }
 
         ~byte_array() {
