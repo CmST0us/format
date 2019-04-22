@@ -226,6 +226,7 @@ namespace format
             char *buf = new char[len];
             ::memset(buf, 0, len);
             this->_data.read(buf, len);
+            this->m_position += len;
             format::data d(buf, len);
             delete [] buf;
             return d;
