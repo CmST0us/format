@@ -91,7 +91,7 @@ namespace format
         }
 
         byte_array& write_byte(uint8_t v) {
-            this->_data << v;
+            this->_data.put(v);
             this->m_position += format::UINT8_SIZE;
             return *this;
         }
@@ -158,8 +158,7 @@ namespace format
         }
 
         uint8_t read_byte() {
-            uint8_t v = 0;
-            this->_data >> v;
+            uint8_t v = this->_data.get();
             this->m_position += format::UINT8_SIZE;
             return v;
         }
